@@ -402,6 +402,7 @@ const [showLodgingModal, setShowLodgingModal] = useState(false)
 const [view, setView] = useState<
   'home' | 'trip' | 'profile' | 'buddies' | 'buddyProfile' | 'shareTrip' | 'sharedTrip' | 'settings' | 'newTrip'
 >('home')
+const [previousView, setPreviousView] = useState<string | null>(null)
 const [menuOpen, setMenuOpen] = useState(false)
   const [showPastTrips, setShowPastTrips] = useState(false)
   const [activeEditor, setActiveEditor] = useState<string | null>(null)
@@ -1239,16 +1240,17 @@ const deleteActivity = (id: number) => {
   }
 
   setItinerary([
-    ...itinerary,
-    {
-  id: Date.now(),
-  date: newActivity.date,
-  startTime: newActivity.startTime,
-endTime: newActivity.endTime,
-  title: newActivity.title,
-  notes: newActivity.notes
-}
-  ])
+  ...itinerary,
+  {
+    id: Date.now(),
+    type: 'activity', 
+    date: newActivity.date,
+    startTime: newActivity.startTime,
+    endTime: newActivity.endTime,
+    title: newActivity.title,
+    notes: newActivity.notes
+  }
+])
 }
   // ===== HOME =====
   if (!user) {
@@ -1405,11 +1407,11 @@ if (view === 'buddies') {
   return (
     <main className="min-h-screen p-6">
       <button
-        onClick={() => setView('home')}
-        className="mb-4 text-sm"
-      >
-        ← Back
-      </button>
+  onClick={() => setView(previousView || 'home')}
+  className="mb-4 text-sm"
+>
+  ← Back
+</button>
 
       <h1 className="text-xl font-semibold mb-4">Travel Buddies</h1>      
 
@@ -1533,11 +1535,11 @@ if (view === 'shareTrip') {
   return (
     <main className="min-h-screen p-6">
       <button
-        onClick={() => setView('home')}
-        className="text-sm mb-4"
-      >
-        ← Back
-      </button>
+  onClick={() => setView(previousView || 'home')}
+  className="text-sm mb-4"
+>
+  ← Back
+</button>
 
       <h1 className="text-xl font-semibold mb-4">
         Share Trip
@@ -1695,7 +1697,7 @@ if (view === 'settings') {
         Saved Packing Sections
       </h1>
       {/* CREATE NEW SAVED SECTION */}
-<div className="border rounded-xl p-4 bg-white mb-6 space-y-3">
+<div className="border rounded-xl p-5 bg-white mb-6 space-y-4">
 
   <input
     placeholder="Section name (e.g. Toiletries)"
@@ -1705,24 +1707,25 @@ if (view === 'settings') {
   />
 
   {/* ADD ITEM */}
-  <div className="flex gap-2">
-    <input
-      placeholder="Add item"
-      value={newSavedItemInput}
-      onChange={(e) => setNewSavedItemInput(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') addSavedItem()
-      }}
-      className="flex-1 border p-2 rounded"
-    />
-    <button
-      onClick={addSavedItem}
-      className="flex-1 py-2 text-white rounded transition hover:opacity-90"
-      style={{ background: colors.primary }}
-    >
-      Add
-    </button>
-  </div>
+  <div className="flex gap-2 ml-4 opacity-95">
+  <input
+    placeholder="Add item"
+    value={newSavedItemInput}
+    onChange={(e) => setNewSavedItemInput(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter') addSavedItem()
+    }}
+    className="flex-[9] border border-gray-300 rounded px-3 h-10 text-sm text-gray-700 bg-white shadow-sm"
+  />
+
+  <button
+    onClick={addSavedItem}
+    className="h-10 px-4 text-white rounded transition hover:opacity-90"
+    style={{ background: colors.primary }}
+  >
+    Add
+  </button>
+</div>
 
   {/* ITEM LIST */}
   <div className="space-y-1">
@@ -1742,7 +1745,7 @@ if (view === 'settings') {
   {/* SAVE BUTTON */}
   <button
     onClick={createSavedSection}
-    className="flex-1 py-2 text-white rounded transition hover:opacity-90"
+    className="flex-1 py-2 px-4 text-white rounded transition hover:opacity-90"
     style={{ background: colors.primary }}
   >
     Save Section
@@ -1752,10 +1755,10 @@ if (view === 'settings') {
 
       <div className="space-y-5">
   {savedSections.map((section, i) => (
-    <div key={i} className="border rounded-xl p-4 bg-white shadow-sm">
+    <div key={i} className="border rounded-xl p-4 bg-white shadow-sm text-gray-800">
 
   {/* HEADER */}
-  <div className="flex justify-between items-center mb-2">
+  <div className="flex justify-between items-center mb-3">
 
     {editingSavedSection === section.name ? (
       <input
@@ -1764,7 +1767,7 @@ if (view === 'settings') {
         className="border p-1 rounded text-sm font-semibold"
       />
     ) : (
-      <h3 className="font-semibold">{section.name}</h3>
+      <h3 className="font-semibold text-gray-900">{section.name}</h3>
     )}
 
     <div className="flex gap-2">
@@ -3324,7 +3327,7 @@ onChange={(e) =>
     placeholder="Section name (e.g. Toiletries)"
     value={newSavedSectionName}
     onChange={(e) => setNewSavedSectionName(e.target.value)}
-    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-white shadow-sm placeholder-gray-500"
+    className="w-full border-2 border-gray-400 rounded px-3 h-10 text-sm text-gray-900 bg-white shadow-sm"
   />
 
   {/* ADD ITEM */}
@@ -3350,8 +3353,8 @@ onChange={(e) =>
   {/* ITEM LIST */}
   <div className="space-y-1">
     {newSavedItems.map((item, i) => (
-      <div key={i} className="flex justify-between text-sm">
-        <span>{item}</span>
+      <div key={i} className="flex justify-between text-sm text-gray-800">
+  <span className="text-gray-800">{item}</span>
         <button
           onClick={() => removeSavedItem(i)}
           className="text-red-500"
@@ -3552,7 +3555,19 @@ setNewSavedItemInput('')
       <button
   onClick={async () => {
   // 1. Build itinerary synchronously (NO STATE)
-  const freshItinerary = buildItineraryFromTravel()
+  const flightItems = buildItineraryFromTravel()
+
+const normalized = itinerary.map(i => ({
+  ...i,
+  type: i.type || 'activity'
+}))
+
+const manualItems = normalized.filter(i => i.type === 'activity')
+const freshItinerary = [...manualItems, ...flightItems].sort(
+  (a, b) =>
+    new Date(a.date + 'T' + (a.startTime || '00:00')).getTime() -
+    new Date(b.date + 'T' + (b.startTime || '00:00')).getTime()
+)
 
   // 2. Save using fresh data
   const docRef = await addDoc(collection(db, 'trips'), {
@@ -3701,9 +3716,10 @@ if (view === 'home') {
   Packing Lists
 </p>
             <p onClick={() => {
-  setView('buddies')
-  setMenuOpen(false)
-}} className="cursor-pointer text-gray-800 hover:text-black font-medium">
+    setPreviousView(view)
+    setView('buddies')
+    setMenuOpen(false)
+  }} className="cursor-pointer text-gray-800 hover:text-black font-medium">
   Travel Buddies
 </p>
             <p
@@ -4066,6 +4082,8 @@ if (view === 'trip') {
       setItinerary={setItinerary}
       setLodging={setLodging}
       setView={setView}
+      setPreviousView={setPreviousView}
+      previousView={previousView}
       activeEditor={activeEditor}
       setActiveEditor={setActiveEditor}
       colors={colors}

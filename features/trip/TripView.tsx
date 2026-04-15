@@ -44,6 +44,8 @@ export default function TripView(props: any) {
     setItinerary,
     setLodging,
     setView,
+    setPreviousView,
+    previousView,
     activeEditor,
     setActiveEditor,
     colors,
@@ -314,11 +316,11 @@ return (
   {/* TOP ROW */}
   <div className="flex justify-between items-center mb-2">
     <button
-      onClick={() => setView('home')}
-      className="text-sm text-gray-700 hover:text-gray-800"
-    >
-      ← Back
-    </button>
+  onClick={() => setView('home')}
+  className="text-sm text-gray-700 hover:text-gray-800"
+>
+  ← Back
+</button>
 
     <div className="flex items-center gap-3">
 
@@ -333,7 +335,8 @@ return (
     onClick={() => {
   if (!activeTripId) return
 
-  setView('shareTrip')
+  setPreviousView('trip')
+setView('shareTrip')
 }}
     className="px-4 py-2 rounded text-white transition active:scale-95 hover:opacity-90"
     style={{ background: colors.primary }}
@@ -1029,7 +1032,10 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
       <CardHeader title="Who’s Going" colors={colors} />
 
       <button
-        onClick={() => setView('buddies')}
+        onClick={() => {
+  setPreviousView('trip')
+  setView('buddies')
+}}
         className="text-sm px-3 py-1 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 transition"
       >
         + Add travel buddies
