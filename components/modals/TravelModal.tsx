@@ -163,9 +163,11 @@ const update = (
 </div>
 
       {travel.connections[type].map((c, i) => (
-        <div key={i} className="p-3 border rounded bg-gray-50 mb-3 mt-4">
+        <div key={i} className="p-3 border border-gray-200 rounded bg-white mb-3 mt-4 shadow-sm">
           <div className="flex justify-between mb-2">
-            <p className="text-sm">Stop {i + 1}</p>
+            <p className="text-sm font-semibold text-gray-900">
+  Stop {i + 1}
+</p>
             <button
               onClick={() => removeConnection(type, i)}
               className="text-xs text-red-500"

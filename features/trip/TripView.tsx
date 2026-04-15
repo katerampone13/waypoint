@@ -7,12 +7,11 @@ import TravelModal from '@/components/modals/TravelModal'
 import LodgingModal from '@/components/modals/LodgingModal'
 import { 
   formatMonthYear, 
-  getNights,
   formatDate,
-  formatTime,
   formatDateRange,
+  formatTime,
   formatDayLabel,
-  createZonedDate
+  getNights
 } from '@/utils/date'
 import { deleteDoc, doc } from 'firebase/firestore'
 import { useState, useEffect } from 'react'
@@ -75,7 +74,7 @@ export default function TripView(props: any) {
     activeTripId,
     buddyProfiles, 
     setTrips,
-    tripTimeZone,
+    tripTimeZone
 } = props
 
 console.log('LOCATION OBJECT:', location)
@@ -316,7 +315,7 @@ return (
   <div className="flex justify-between items-center mb-2">
     <button
       onClick={() => setView('home')}
-      className="text-sm text-gray-600 hover:text-gray-800"
+      className="text-sm text-gray-700 hover:text-gray-800"
     >
       ← Back
     </button>
@@ -331,7 +330,11 @@ return (
   </button>
 
   <button
-    onClick={() => setView('shareTrip')}
+    onClick={() => {
+  if (!activeTripId) return
+
+  setView('shareTrip')
+}}
     className="px-4 py-2 rounded text-white transition active:scale-95 hover:opacity-90"
     style={{ background: colors.primary }}
   >
@@ -374,9 +377,8 @@ return (
 </div>
 
 </div>
-
-<div className="mt-0 mb-4 flex gap-2 flex-wrap">
-  {['beach', 'city', 'adventure', 'ski'].map((type) => (
+<div className="mt-0 mb-4 mt-2 flex gap-2 flex-wrap w-full">
+  {['adventure', 'beach', 'business', 'city', 'family', 'ski', 'other'].map((type) => (
     <button
       key={type}
       onClick={() => setTripType(type as any)}
@@ -437,12 +439,12 @@ return (
             {leg.from || '—'} → {leg.to || '—'}
           </p>
 
-          <p className="text-gray-600">
+          <p className="text-gray-700">
             {formatTime(leg.departTime)} – {formatTime(leg.arriveTime)}
           </p>
 
 
-          <p className="text-gray-500">
+          <p className="text-gray-700">
             Flight {leg.flight || '--'} (Seat {leg.seat || '--'})
           </p>
         </div>
@@ -451,7 +453,7 @@ return (
       {/* LAYOVER */}
       {layover && (
 
-          <div className="ml-6 mb-2 mt-2 text-[11px] text-gray-500 italic space-y-0.5">
+          <div className="ml-6 mb-2 mt-2 text-[11px] text-gray-700 italic space-y-0.5">
   <div>
     ⏱ {layover.duration} layover in {layover.airport || '—'}
   </div>
@@ -506,13 +508,13 @@ return (
             {leg.from || '—'} → {leg.to || '—'}
           </p>
 
-          <p className="text-gray-600">
+          <p className="text-gray-700">
             {formatTime(leg.departTime)} – {formatTime(leg.arriveTime)}
           </p>
 
   
 
-          <p className="text-gray-500">
+          <p className="text-gray-700">
             Flight {leg.flight || '--'} (Seat {leg.seat || '--'})
           </p>
         </div>
@@ -520,8 +522,8 @@ return (
 
       {/* LAYOVER */}
       {layover && (
-        <div className="ml-6 mb-2 text-[11px] text-gray-500 italic">
-          <div className="ml-6 mb-2 mt-2 text-[11px] text-gray-500 italic space-y-0.5">
+        <div className="ml-6 mb-2 text-[11px] text-gray-700 italic">
+          <div className="ml-6 mb-2 mt-2 text-[11px] text-gray-700 italic space-y-0.5">
   <div>
     ⏱ {layover.duration} layover in {layover.airport || '—'}
   </div>
@@ -554,7 +556,7 @@ return (
   {lodging.name || 'Add place'}
 </p>
 
-<p className="text-xs text-gray-600 mb-2">
+<p className="text-xs text-gray-700 mb-2">
   {lodging.address || 'Address'}
 </p>
     </div>
@@ -574,11 +576,11 @@ return (
     {/* Check-in / Check-out times */}
     {(lodging.checkInTime || lodging.checkOutTime) && (
       <p className="text-gray-700">
-  Check-in <span className="text-gray-600">
+  Check-in <span className="text-gray-700">
   {formatTime(lodging.checkInTime)}
 </span>
   {' · '}
-  Check-out <span className="text-gray-600">
+  Check-out <span className="text-gray-700">
   {formatTime(lodging.checkOutTime)}
 </span>
 </p>
@@ -625,7 +627,7 @@ return (
     <div>
       {totalCount === 0 ? (
         <>
-          <div className="mt-1 text-sm text-gray-500">
+          <div className="mt-1 text-sm text-gray-700">
             No items yet. Add your first packing section to get started.
           </div>
 
@@ -663,7 +665,7 @@ return (
 
       return (
         <div key={section} className="text-xs flex justify-between">
-          <span className="text-gray-600">{section}</span>
+          <span className="text-gray-700">{section}</span>
           <span className="font-medium">{packed}/{items.length}</span>
         </div>
       )
@@ -683,12 +685,12 @@ return (
     <CardHeader title="Weather" colors={colors} />
 
     {loadingWeather ? (
-  <div className="mt-3 text-sm text-gray-500">
+  <div className="mt-3 text-sm text-gray-700">
     Loading weather...
   </div>
 ) : weather.length === 0 ? (
   <>
-    <div className="mt-3 text-sm text-gray-500">
+    <div className="mt-3 text-sm text-gray-700">
       Weather will appear automatically once your destination and dates are set.
     </div>
   </>
@@ -696,7 +698,7 @@ return (
       <div className="flex gap-3 mt-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth">
         {weather.map((day, i) => {
           const [y, m, d] = day.date.split('-').map(Number)
-const date = createZonedDate(day.date, '00:00', tripTimeZone)
+const date = new Date(y, m - 1, d)
 
           const now = new Date()
 const today = new Date(
@@ -765,7 +767,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
                 <span className="text-xl font-bold text-gray-900">
   {day.hi != null ? `${day.hi}°` : '--'}
 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-700">
   / {day.lo != null ? `${day.lo}°` : '--'}
 </span>
               </div>
@@ -813,7 +815,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
 </div>
 {sortedDays.length === 0 && (
   <>
-    <div className="mt-3 text-sm text-gray-500">
+    <div className="mt-3 text-sm text-gray-700">
       No activities yet. Add your first activity to get started.
     </div>
 
@@ -927,8 +929,17 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
   }`}
 >
 
+  <div className="flex justify-end">
+    <button
+      onClick={() => setExpandedItem(null)}
+      className="text-gray-400 hover:text-gray-700 text-sm"
+    >
+      ✕
+    </button>
+  </div>
+
           <div>
-            <p className="text-xs text-gray-500 mb-1">Start Time</p>
+            <p className="text-xs text-gray-700 mb-1">Start Time</p>
             <input
               type="time"
               value={item.startTime || ''}
@@ -940,7 +951,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-1">End Time</p>
+            <p className="text-xs text-gray-700 mb-1">End Time</p>
             <input
               type="time"
               value={item.endTime || ''}
@@ -952,7 +963,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-1">Activity Name</p>
+            <p className="text-xs text-gray-700 mb-1">Activity Name</p>
             <input
               value={item.title || ''}
               onChange={(e) =>
@@ -963,7 +974,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-1">Address</p>
+            <p className="text-xs text-gray-700 mb-1">Address</p>
             <input
               value={item.address || ''}
               onChange={(e) =>
@@ -974,7 +985,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-1">Link</p>
+            <p className="text-xs text-gray-700 mb-1">Link</p>
             <input
               value={item.link || ''}
               onChange={(e) =>
@@ -985,7 +996,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-1">Notes</p>
+            <p className="text-xs text-gray-700 mb-1">Notes</p>
             <textarea
               value={item.notes || ''}
               onChange={(e) =>
@@ -1026,7 +1037,7 @@ border border-white/40 shadow-sm backdrop-blur-md snap-start`}
     </div>
 
     {(!buddies || buddies.length === 0) ? (
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-700">
         No travel buddies. Invite friends to share the trip.
       </div>
     ) : (
@@ -1122,11 +1133,11 @@ applySavedSection={applySavedSection}
   <h2 className={`${modalStyles.title} mb-4`}>Weather</h2>
 
 {loadingWeather ? (
-  <div className="mt-3 text-sm text-gray-500">
+  <div className="mt-3 text-sm text-gray-700">
     Loading weather...
   </div>
 ) : weather.length === 0 ? (
-  <p className="text-sm text-gray-500">
+  <p className="text-sm text-gray-700">
     Weather will appear automatically once a destination is selected.
   </p>
 ) : (
@@ -1135,8 +1146,8 @@ applySavedSection={applySavedSection}
     {/* 🌤 DAILY */}
     <div className="grid grid-cols-2 gap-3">
       {weather.map((day, i) => (
-        <div key={i} className="p-3 rounded-xl bg-gray-50 border">
-          <p className="text-sm font-semibold">
+        <div key={i} className="p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+          <p className="text-sm font-semibold text-gray-900">
             {formatDayLabel(day.date, tripTimeZone)}
           </p>
 
@@ -1147,16 +1158,16 @@ applySavedSection={applySavedSection}
             />
 
             <div className="text-right">
-              <p className="font-semibold">
+              <p className="font-semibold text-gray-900 text-lg">
   {day.hi != null ? `${day.hi}°` : '--'}
 </p>
-<p className="text-xs text-gray-500">
+<p className="text-xs text-gray-600">
   {day.lo != null ? `${day.lo}°` : '--'}
 </p>
             </div>
           </div>
 
-          <p className="text-xs mt-1 text-gray-600 capitalize">
+          <p className="text-xs mt-1 text-gray-700 capitalize">
             {day.condition}
           </p>
 
@@ -1171,22 +1182,22 @@ applySavedSection={applySavedSection}
 
     {/* ⏱ HOURLY */}
     <div>
-      <p className="text-sm font-semibold mb-2">Hourly</p>
+      <p className="text-sm font-semibold text-gray-900 mb-2">Hourly</p>
 
       <div className="flex gap-3 overflow-x-auto pb-2">
         {hourlyWeather.map((h, i) => (
           <div
             key={i}
-            className="min-w-[80px] p-2 rounded-lg bg-gray-50 border text-center"
+            className="min-w-[80px] p-2 rounded-lg bg-white border border-gray-200 shadow-sm text-center"
           >
-            <p className="text-xs text-gray-500">{h.time}</p>
+            <p className="text-xs text-gray-600">{h.time}</p>
 
             <img
               src={`https://openweathermap.org/img/wn/${h.icon}.png`}
               className="mx-auto"
             />
 
-            <p className="text-sm font-semibold">{h.temp}°</p>
+            <p className="text-sm font-semibold text-gray-900">{h.temp}°</p>
 
             {h.precip > 0 && (
               <p className="text-[10px] text-blue-500">
@@ -1306,8 +1317,8 @@ applySavedSection={applySavedSection}
 
         return updated.sort(
           (a, b) =>
-            createZonedDate(a.date, a.startTime, tripTimeZone).getTime() -
-createZonedDate(b.date, b.startTime, tripTimeZone).getTime() ||
+            new Date(a.date + 'T' + (a.startTime || '00:00')).getTime() -
+new Date(b.date + 'T' + (b.startTime || '00:00')).getTime() ||
             (a.startTime || '').localeCompare(b.startTime || '')
         )
       })
@@ -1341,7 +1352,7 @@ createZonedDate(b.date, b.startTime, tripTimeZone).getTime() ||
         Cancel trip?
       </h2>
 
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="text-sm text-gray-700 mb-6">
         This action cannot be undone.
       </p>
 

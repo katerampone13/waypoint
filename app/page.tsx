@@ -23,8 +23,7 @@ import {
   formatDateRange,
   formatTime,
   formatDayLabel,
-  getNights,
-  createZonedDate
+  getNights
 } from '@/utils/date'
 
 import { buildPackingList } from '@/utils/packing'
@@ -187,20 +186,33 @@ export default function Home() {
 }
 const [buddyProfiles, setBuddyProfiles] = useState<any[]>([])
 const [allUsers, setAllUsers] = useState<any[]>([])
-const [search, setSearch] = useState('')
-const [buddies, setBuddies] = useState<string[]>([])
-useEffect(() => {
-  const loadUsers = async () => {
-    const snap = await getDocs(collection(db, 'users'))
-    const users = snap.docs.map(doc => ({
+const searchUsers = async (queryText: string) => {
+  setSearch(queryText)
+
+  // ✅ FIX: include user check
+  if (!queryText.trim() || !user) {
+    setAllUsers([])
+    return
+  }
+
+  const snap = await getDocs(collection(db, 'users'))
+
+  const results = snap.docs
+    .map(doc => ({
       id: doc.id,
       ...doc.data()
     }))
-    setAllUsers(users)
-  }
+    .filter(u =>
+      u.id !== user.uid &&
+      (u.name || '').toLowerCase().includes(queryText.toLowerCase())
+    )
 
-  loadUsers()
-}, [])
+  setAllUsers(results)
+}
+const [search, setSearch] = useState('')
+const [buddies, setBuddies] = useState<string[]>([])
+const [sharedWith, setSharedWith] = useState<string[]>([])
+
 useEffect(() => {
   if (!user) return
 
@@ -231,31 +243,51 @@ const [location, setLocation] = useState<any>(null)
 const [tripType, setTripType] = useState<'beach' | 'city' | 'adventure' | 'ski' | ''>('')
 
 const [selectedBuddy, setSelectedBuddy] = useState<any>(null)
-const [selectedTrip, setSelectedTrip] = useState<any>({ id: 'default-trip' })
 const shareTrip = async (buddyId: string) => {
-  if (!user || !selectedTrip) return
+  if (!user || !activeTripId) return
 
   await addDoc(collection(db, 'sharedTrips'), {
-  tripId: selectedTrip.id,
+  tripId: activeTripId,
   ownerId: user.uid,
   sharedWith: buddyId,
   tripData: {
-  destination: location?.name || '',
-  destinationData: {
-  name: location?.name || '',
-  lat: location?.lat ?? null,
-  lng: location?.lng ?? null,
-  city: location?.city || ''
-},
-  startDate: travel.arrival.date,
-  endDate: travel.departure.date,
-  itinerary,
-  lodging
-}
+    destination: location?.name || '',
+    destinationData: {
+      name: location?.name || '',
+      lat: location?.lat ?? null,
+      lng: location?.lng ?? null,
+      city: location?.city || ''
+    },
+    startDate: travel.arrival.date,
+    endDate: travel.departure.date,
+    itinerary,
+    lodging
+  }
 })
 
-  alert('Trip shared!')
+// ✅ update UI state
+setSharedWith(prev =>
+  prev.includes(buddyId) ? prev : [...prev, buddyId]
+)
 }
+useEffect(() => {
+  if (!user || !activeTripId) return
+
+  const loadSharedUsers = async () => {
+    const q = query(
+      collection(db, 'sharedTrips'),
+      where('tripId', '==', activeTripId)
+    )
+
+    const snap = await getDocs(q)
+
+    const sharedUserIds = snap.docs.map(d => d.data().sharedWith)
+
+    setSharedWith(sharedUserIds)
+  }
+
+  loadSharedUsers()
+}, [user, activeTripId])
 useEffect(() => {
   if (!user) return
 
@@ -312,9 +344,10 @@ useEffect(() => {
 const now = new Date()
 
 const getTripStartDate = (trip: any) => {
-  return trip?.travel?.arrival?.date
-  ? createZonedDate(trip.travel.arrival.date, '00:00')
-  : null
+  if (!trip?.travel?.arrival?.date) return null
+
+  const [y, m, d] = trip.travel.arrival.date.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 const [trips, setTrips] = useState<any[]>([])  
 const upcomingTrips = trips
@@ -455,8 +488,8 @@ confirmation: c.confirmation || ''
 
   return newItems.sort(
     (a, b) =>
-     createZonedDate(a.date, a.startTime).getTime()  -
-createZonedDate(b.date, b.startTime, tripTimeZone).getTime() ||
+     new Date(a.date + 'T' + (a.startTime || '00:00')).getTime() -
+new Date(b.date + 'T' + (b.startTime || '00:00')).getTime() ||
       (a.startTime || '').localeCompare(b.startTime || '')
   )
 }
@@ -513,9 +546,8 @@ const syncTravelToItinerary = () => {
     const merged = [...nonFlights, ...updatedFlights]
 
 return merged.sort((a, b) =>
-  createZonedDate(a.date, a.startTime).getTime()() -
-createZonedDate(b.date, b.startTime, tripTimeZone).getTime() ||
-  (a.startTime || '').localeCompare(b.startTime || '')
+  new Date(a.date + 'T' + (a.startTime || '00:00')).getTime() -
+  new Date(b.date + 'T' + (b.startTime || '00:00')).getTime()
 )
   })
 }
@@ -863,13 +895,25 @@ const saveSection = async (sectionName, items) => {
   const user = auth.currentUser
   if (!user) return
 
+  const newSection = {
+    name: sectionName,
+    items
+  }
+
+  // 1. Save to Firestore (your existing logic)
   await setDoc(
     doc(db, 'users', user.uid, 'packingSections', sectionName),
-    {
-      name: sectionName,
-      items
-    }
+    newSection
   )
+
+  // 2. 🔥 IMMEDIATELY update local state (THIS FIXES YOUR ISSUE)
+  setSavedSections(prev => {
+    // prevent duplicates
+    const exists = prev.some(s => s.name === sectionName)
+    if (exists) return prev
+
+    return [...prev, newSection]
+  })
 }
 const addSavedItem = () => {
   if (!newSavedItemInput.trim()) return
@@ -1145,8 +1189,8 @@ const toggleSectionPreview = (sectionName: string) => {
 }, {})
 const sortedDays = Object.keys(grouped).sort(
   (a, b) =>
-    createZonedDate(a, '00:00', tripTimeZone).getTime() -
-    createZonedDate(b, '00:00', tripTimeZone).getTime()
+    new Date(a + 'T00:00').getTime() -
+new Date(b + 'T00:00').getTime()
 )
 // sort AFTER grouping
 Object.keys(grouped).forEach(date => {
@@ -1356,10 +1400,7 @@ setAirportSearch({ field: null, query: '', results: [] })
   )
 }
 if (view === 'buddies') {
-  const filtered = allUsers.filter(u =>
-    u.id !== user.uid &&
-    (u.name || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = allUsers
 
   return (
     <main className="min-h-screen p-6">
@@ -1370,16 +1411,58 @@ if (view === 'buddies') {
         ← Back
       </button>
 
-      <h1 className="text-xl font-semibold mb-4">Travel Buddies</h1>
+      <h1 className="text-xl font-semibold mb-4">Travel Buddies</h1>      
 
-      <input
-        placeholder="Search users..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full border p-2 rounded mb-4"
-      />
+{/* SEARCH RESULTS */}
+<h2 className="text-lg font-semibold">Find New Buddies</h2>
 
-      {/* MY BUDDIES */}
+<input
+  placeholder="Search by name to find travel buddies..."
+  value={search}
+  onChange={(e) => searchUsers(e.target.value)}
+  className="w-full border p-2 rounded"
+/>
+
+{search.trim() !== '' && (
+  <div className="space-y-3">
+    {filtered.map((u) => (
+          <div
+            key={u.id}
+            className="border p-3 rounded flex justify-between items-center"
+          >
+            <div>
+              <p className="font-medium">{u.name || 'No name'}</p>
+              <p className="text-sm text-gray-500">
+                {u.homebase || ''}
+              </p>
+            </div>
+
+            {sharedWith.includes(u.id) ? (
+  <span className="text-sm text-green-600">
+    ✓ Shared
+  </span>
+) : buddies.includes(u.id) ? (
+  <button
+    onClick={() => shareTrip(u.id)}
+    className="text-sm px-3 py-1 rounded text-white"
+    style={{ background: '#607161' }}
+  >
+    Share
+  </button>
+) : (
+  <button
+    onClick={() => addBuddy(u.id)}
+    className="text-sm px-3 py-1 rounded text-white"
+    style={{ background: '#607161' }}
+  >
+    Add
+  </button>
+)}
+          </div>
+        ))}
+      </div>
+)}
+{/* MY BUDDIES */}
 {buddyProfiles.length > 0 && (
   <>
     <h2 className="text-lg font-semibold mt-4">Your Travel Buddies</h2>
@@ -1409,39 +1492,6 @@ if (view === 'buddies') {
     </div>
   </>
 )}
-
-{/* SEARCH RESULTS */}
-<h2 className="text-lg font-semibold">Find New Buddies</h2>
-
-<div className="space-y-3 mt-2">
-  {filtered.map((u) => (
-          <div
-            key={u.id}
-            className="border p-3 rounded flex justify-between items-center"
-          >
-            <div>
-              <p className="font-medium">{u.name || 'No name'}</p>
-              <p className="text-sm text-gray-500">
-                {u.homebase || ''}
-              </p>
-            </div>
-
-            {buddies.includes(u.id) ? (
-              <span className="text-sm text-green-600">
-                ✓ Added
-              </span>
-            ) : (
-              <button
-                onClick={() => addBuddy(u.id)}
-                className="text-sm px-3 py-1 rounded text-white"
-                style={{ background: '#607161' }}
-              >
-                Add
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
     </main>
   )
 }
@@ -1493,26 +1543,98 @@ if (view === 'shareTrip') {
         Share Trip
       </h1>
 
+      {/* 🔍 SEARCH NEW BUDDIES */}
+      <div className="mb-6">
+        <p className="text-sm font-semibold text-gray-900 mb-2">
+          Find New Travel Buddies
+        </p>
+
+        <input
+          placeholder="Search by name..."
+          value={search}
+          onChange={(e) => searchUsers(e.target.value)}
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-white shadow-sm"
+        />
+
+        {search.trim() !== '' && (
+          <div className="space-y-2 mt-3">
+            {allUsers.map((u) => (
+              <div
+                key={u.id}
+                className="border p-3 rounded flex justify-between items-center bg-white"
+              >
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {u.name || 'No name'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {u.homebase || ''}
+                  </p>
+                </div>
+
+                {sharedWith.includes(u.id) ? (
+  <span className="text-sm text-green-600">
+    ✓ Shared
+  </span>
+) : buddies.includes(u.id) ? (
+  <button
+    onClick={() => shareTrip(u.id)}
+    className="text-sm px-3 py-1 rounded text-white"
+    style={{ background: '#607161' }}
+  >
+    Share
+  </button>
+) : (
+                  <button
+                    onClick={async () => {
+  await addBuddy(u.id)
+  await shareTrip(u.id)
+}}
+                    className="text-sm px-3 py-1 rounded text-white"
+                    style={{ background: '#607161' }}
+                  >
+                    Add
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 👥 EXISTING BUDDIES */}
       <div className="space-y-3">
+        <p className="text-sm font-semibold text-gray-900">
+          Your Travel Buddies
+        </p>
+
         {buddyProfiles.map((b) => (
           <div
             key={b.id}
-            className="border p-3 rounded flex justify-between items-center"
+            className="border p-3 rounded flex justify-between items-center bg-white"
           >
             <div>
-              <p className="font-medium">{b.name}</p>
+              <p className="font-medium text-gray-900">
+                {b.name}
+              </p>
               <p className="text-sm text-gray-500">
                 {b.homebase || ''}
               </p>
             </div>
 
-            <button
-              onClick={() => shareTrip(b.id)}
-              className="text-sm px-3 py-1 rounded text-white"
-              style={{ background: '#607161' }}
-            >
-              Share
-            </button>
+            {sharedWith.includes(b.id) ? (
+  <span className="text-sm text-green-600">
+    ✓ Shared
+  </span>
+) : (
+  <button
+    onClick={() => shareTrip(b.id)}
+    className="text-sm px-3 py-1 rounded text-white"
+    style={{ background: '#607161' }}
+  >
+    Share
+  </button>
+)}
           </div>
         ))}
       </div>
@@ -1876,9 +1998,11 @@ if (view === 'newTrip') {
         className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-white shadow-sm placeholder-gray-500"
       >
         <option value="">Select type</option>
-        <option value="beach">Beach</option>
-        <option value="city">City</option>
         <option value="adventure">Adventure</option>
+        <option value="beach">Beach</option>
+        <option value="business">Business</option>
+        <option value="city">City</option>
+        <option value="family">Family</option>
         <option value="ski">Ski</option>
         <option value="other">Other</option>
       </select>
