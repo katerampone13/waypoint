@@ -332,7 +332,7 @@ const pastTrips = trips
     return date && date < now
   })
   .sort((a, b) => {
-    return getTripStartDate(b)! - getTripStartDate(a)!
+    return getTripStartDate(b)!.getTime() - getTripStartDate(a)!.getTime()
   })
 const [selectedSharedTrip, setSelectedSharedTrip] = useState<any>(null)
   
