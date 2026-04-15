@@ -323,7 +323,7 @@ const upcomingTrips = trips
     return date && date >= now
   })
   .sort((a, b) => {
-    return getTripStartDate(a)! - getTripStartDate(b)!
+    return getTripStartDate(a)!.getTime() - getTripStartDate(b)!.getTime()
   })
 
 const pastTrips = trips
