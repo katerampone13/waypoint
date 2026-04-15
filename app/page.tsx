@@ -455,7 +455,7 @@ confirmation: c.confirmation || ''
 
   return newItems.sort(
     (a, b) =>
-      createZonedDate(a.date, a.startTime, tripTimeZone).getTime() -
+     createZonedDate(a.date, a.startTime).getTime()  -
 createZonedDate(b.date, b.startTime, tripTimeZone).getTime() ||
       (a.startTime || '').localeCompare(b.startTime || '')
   )
@@ -513,7 +513,7 @@ const syncTravelToItinerary = () => {
     const merged = [...nonFlights, ...updatedFlights]
 
 return merged.sort((a, b) =>
-  createZonedDate(a.date, a.startTime, tripTimeZone).getTime() -
+  createZonedDate(a.date, a.startTime).getTime()() -
 createZonedDate(b.date, b.startTime, tripTimeZone).getTime() ||
   (a.startTime || '').localeCompare(b.startTime || '')
 )
