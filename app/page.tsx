@@ -316,7 +316,7 @@ const getTripStartDate = (trip: any) => {
   ? createZonedDate(trip.travel.arrival.date, '00:00', trip.timeZone || tripTimeZone)
   : null
 }
-const [trips, setTrips] = useState([])  
+const [trips, setTrips] = useState<any[]>([])  
 const upcomingTrips = trips
   .filter(t => {
     const date = getTripStartDate(t)
