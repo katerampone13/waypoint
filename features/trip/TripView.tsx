@@ -456,7 +456,7 @@ return (
       {/* LAYOVER */}
       {layover && (
 
-          <div className="ml-6 mb-2 text-[11px] text-gray-500 italic space-y-0.5">
+          <div className="ml-6 mb-2 mt-2 text-[11px] text-gray-500 italic space-y-0.5">
   <div>
     ⏱ {layover.duration} layover in {layover.airport || '—'}
   </div>
@@ -531,7 +531,7 @@ return (
       {/* LAYOVER */}
       {layover && (
         <div className="ml-6 mb-2 text-[11px] text-gray-500 italic">
-          <div className="ml-6 mb-2 text-[11px] text-gray-500 italic space-y-0.5">
+          <div className="ml-6 mb-2 mt-2 text-[11px] text-gray-500 italic space-y-0.5">
   <div>
     ⏱ {layover.duration} layover in {layover.airport || '—'}
   </div>
