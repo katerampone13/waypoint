@@ -409,11 +409,6 @@ return (
       <p className="text-xs text-gray-700 mb-2">
         Confirmation # {travel.arrival.confirmation || '--'}
       </p>
-{arrivalLegs.length > 0 && (
-  <p className="text-xs text-gray-500 mb-2">
-    Total travel time: {getTotalTravelTime(arrivalLegs)}
-  </p>
-)}
       <div className="relative">
         <div
   className="absolute left-0 top-0 bottom-0 w-px bg-gray-200"
@@ -483,11 +478,6 @@ return (
       <p className="text-xs text-gray-700 mb-2">
         Confirmation # {travel.departure.confirmation || '--'}
       </p>
-{departureLegs.length > 0 && (
-  <p className="text-xs text-gray-600 mb-2">
-    Total travel time: {getTotalTravelTime(departureLegs)}
-  </p>
-)}
       <div className="relative">
         <div
   className="absolute left-0 top-0 bottom-0 w-px bg-gray-200"
