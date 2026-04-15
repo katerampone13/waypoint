@@ -313,7 +313,7 @@ const now = new Date()
 
 const getTripStartDate = (trip: any) => {
   return trip?.travel?.arrival?.date
-  ? createZonedDate(trip.travel.arrival.date, '00:00', trip.timeZone || tripTimeZone)
+  ? createZonedDate(trip.travel.arrival.date, '00:00')
   : null
 }
 const [trips, setTrips] = useState<any[]>([])  
