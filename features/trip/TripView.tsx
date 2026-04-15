@@ -17,7 +17,6 @@ import {
 import { deleteDoc, doc } from 'firebase/firestore'
 import { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
-import { getTimeZoneAbbr } from '@/utils/date'
 import {
   fetchWeatherData,
   buildDailyWeather,
@@ -375,9 +374,7 @@ return (
 </div>
 
 </div>
-<p className="text-xs text-gray-400 mt-1 mb-2 w-full italic">
-  Note: All times shown in local destination time.
-</p>
+
 <div className="mt-0 mb-4 flex gap-2 flex-wrap">
   {['beach', 'city', 'adventure', 'ski'].map((type) => (
     <button
@@ -446,15 +443,9 @@ return (
           </p>
 
           <p className="text-gray-600">
-            {formatTime(leg.departTime, tripTimeZone)} – {formatTime(leg.arriveTime, tripTimeZone)}
-<span className="ml-1 text-[10px] text-gray-400">
-  {getTimeZoneAbbr(tripTimeZone)}
-</span>
+            {formatTime(leg.departTime)} – {formatTime(leg.arriveTime)}
           </p>
 
-          {duration && (
-            <p className="text-gray-500">✈️ {duration}</p>
-          )}
 
           <p className="text-gray-500">
             Flight {leg.flight || '--'} (Seat {leg.seat || '--'})
@@ -526,15 +517,10 @@ return (
           </p>
 
           <p className="text-gray-600">
-            {formatTime(leg.departTime, tripTimeZone)} – {formatTime(leg.arriveTime, tripTimeZone)}
-<span className="ml-1 text-[10px] text-gray-400">
-  {getTimeZoneAbbr(tripTimeZone)}
-</span>
+            {formatTime(leg.departTime)} – {formatTime(leg.arriveTime)}
           </p>
 
-          {duration && (
-            <p className="text-gray-500">✈️ {duration}</p>
-          )}
+  
 
           <p className="text-gray-500">
             Flight {leg.flight || '--'} (Seat {leg.seat || '--'})
@@ -599,11 +585,11 @@ return (
     {(lodging.checkInTime || lodging.checkOutTime) && (
       <p className="text-gray-700">
   Check-in <span className="text-gray-600">
-  {formatTime(lodging.checkInTime, tripTimeZone)} {getTimeZoneAbbr(tripTimeZone)}
+  {formatTime(lodging.checkInTime)}
 </span>
   {' · '}
   Check-out <span className="text-gray-600">
-  {formatTime(lodging.checkOutTime, tripTimeZone)} {getTimeZoneAbbr(tripTimeZone)}
+  {formatTime(lodging.checkOutTime)}
 </span>
 </p>
     )}
