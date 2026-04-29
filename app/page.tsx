@@ -322,40 +322,41 @@ useEffect(() => {
 useEffect(() => {
   if (!user) return
 
-  const ownedQuery = query(
-  collection(db, 'trips'),
-  where('createdBy', '==', user.uid)
-)
+  const loadTrips = async () => {
+    const ownedQuery = query(
+      collection(db, 'trips'),
+      where('createdBy', '==', user.uid)
+    )
 
-const sharedQuery = query(
-  collection(db, 'trips'),
-  where('buddies', 'array-contains', user.uid)
-)
+    const sharedQuery = query(
+      collection(db, 'trips'),
+      where('buddies', 'array-contains', user.uid)
+    )
 
-const [ownedSnap, sharedSnap] = await Promise.all([
-  getDocs(ownedQuery),
-  getDocs(sharedQuery)
-])
+    const [ownedSnap, sharedSnap] = await Promise.all([
+      getDocs(ownedQuery),
+      getDocs(sharedQuery)
+    ])
 
-const ownedTrips = ownedSnap.docs.map(doc => ({
+    const ownedTrips = ownedSnap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+
+    const sharedTripsData = sharedSnap.docs.map(doc => ({
   id: doc.id,
   ...doc.data()
 }))
 
-const sharedTrips = sharedSnap.docs.map(doc => ({
-  id: doc.id,
-  ...doc.data()
-}))
+    const allTrips = [
+      ...ownedTrips,
+      ...sharedTripsData.filter(
+  s => !ownedTrips.some(o => o.id === s.id)
+)
+    ]
 
-// merge + dedupe
-const allTrips = [
-  ...ownedTrips,
-  ...sharedTrips.filter(
-    s => !ownedTrips.some(o => o.id === s.id)
-  )
-]
-
-setTrips(allTrips)
+    setTrips(allTrips)
+  }
 
   loadTrips()
 }, [user])
@@ -3797,7 +3798,32 @@ if (view === 'home') {
   city: trip.location?.city || ''
 })
               setTripType(trip.tripType)
-              setTravel(trip.travel || {})
+              setTravel(trip.travel || {
+  arrival: {
+    date: '',
+    departAirport: '',
+    departTime: '',
+    arriveAirport: '',
+    arriveTime: '',
+    flight: '',
+    seat: '',
+    confirmation: ''
+  },
+  departure: {
+    date: '',
+    departAirport: '',
+    departTime: '',
+    arriveAirport: '',
+    arriveTime: '',
+    flight: '',
+    seat: '',
+    confirmation: ''
+  },
+  connections: {
+    arrival: [],
+    departure: []
+  }
+})
               setLodging(trip.lodging || {})
               setItinerary(trip.itinerary || [])
               setPacking(trip.packing || {})
@@ -3865,7 +3891,32 @@ if (view === 'home') {
                     city: trip.location?.city || ''
                   })
                   setTripType(trip.tripType)
-                  setTravel(trip.travel || {})
+                  setTravel(trip.travel || {
+                    arrival: {
+                      date: '',
+                      departAirport: '',
+                      departTime: '',
+                      arriveAirport: '',
+                      arriveTime: '',
+                      flight: '',
+                      seat: '',
+                      confirmation: ''
+                    },
+                    departure: {
+                      date: '',
+                      departAirport: '',
+                      departTime: '',
+                      arriveAirport: '',
+                      arriveTime: '',
+                      flight: '',
+                      seat: '',
+                      confirmation: ''
+                    },
+                    connections: {
+                      arrival: [],
+                      departure: []
+                    }
+                  })
                   setLodging(trip.lodging || {})
                   setItinerary(trip.itinerary || [])
                   setPacking(trip.packing || {})
