@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   signOut
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { collection, getDocs, addDoc, query, where } from 'firebase/firestore'
 import { useState, useEffect, useRef } from 'react'
@@ -28,10 +28,8 @@ import {
 
 import { buildPackingList } from '@/utils/packing'
 import TripView from '@/features/trip/TripView'
-import { deleteDoc } from 'firebase/firestore'
 import airportsData from '@/data/airports.json'
 import { Travel } from '@/types/travel'
-import { serverTimestamp } from 'firebase/firestore'
 
 const colors = {
   primary: '#607161',
@@ -87,6 +85,7 @@ const saveTrip = async (draft: any) => {
   : null,
   timeZone: draft.timeZone || null,
   createdBy: user?.uid || null,
+  buddies: [], 
   createdAt: serverTimestamp()
 })
 
@@ -323,21 +322,40 @@ useEffect(() => {
 useEffect(() => {
   if (!user) return
 
-  const loadTrips = async () => {
-    const q = query(
-      collection(db, 'trips'),
-      where('createdBy', '==', user.uid)
-    )
+  const ownedQuery = query(
+  collection(db, 'trips'),
+  where('createdBy', '==', user.uid)
+)
 
-    const snap = await getDocs(q)
+const sharedQuery = query(
+  collection(db, 'trips'),
+  where('buddies', 'array-contains', user.uid)
+)
 
-    const userTrips = snap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+const [ownedSnap, sharedSnap] = await Promise.all([
+  getDocs(ownedQuery),
+  getDocs(sharedQuery)
+])
 
-    setTrips(userTrips)
-  }
+const ownedTrips = ownedSnap.docs.map(doc => ({
+  id: doc.id,
+  ...doc.data()
+}))
+
+const sharedTrips = sharedSnap.docs.map(doc => ({
+  id: doc.id,
+  ...doc.data()
+}))
+
+// merge + dedupe
+const allTrips = [
+  ...ownedTrips,
+  ...sharedTrips.filter(
+    s => !ownedTrips.some(o => o.id === s.id)
+  )
+]
+
+setTrips(allTrips)
 
   loadTrips()
 }, [user])
@@ -1137,32 +1155,32 @@ const toggleSectionPreview = (sectionName: string) => {
       const ref = doc(db, 'trips', activeTripId)
 
       await updateDoc(ref, {
-        name: tripName,
-        location: {
-  name: location?.name || '',
-  lat: location?.lat ?? null,
-  lng: location?.lng ?? null,
-  city: location?.city || ''
-},
-        tripType,
-        travel,
-        lodging: {
-  name: lodging.name || '',
-  address: lodging.address || '',
-  lat: lodging.lat ?? null,
-  lng: lodging.lng ?? null,
-  confirmation: lodging.confirmation || '',
-  checkInDate: lodging.checkInDate || '',
-  checkInTime: lodging.checkInTime || '',
-  checkOutDate: lodging.checkOutDate || '',
-  checkOutTime: lodging.checkOutTime || '',
-  notes: lodging.notes || ''
-},
-        itinerary,
-        packing,
-        buddies,
-        updatedAt: new Date()
-      })
+  name: tripName,
+  location: {
+    name: location?.name || '',
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+    city: location?.city || ''
+  },
+  tripType,
+  travel,
+  lodging: {
+    name: lodging.name || '',
+    address: lodging.address || '',
+    lat: lodging.lat ?? null,
+    lng: lodging.lng ?? null,
+    confirmation: lodging.confirmation || '',
+    checkInDate: lodging.checkInDate || '',
+    checkInTime: lodging.checkInTime || '',
+    checkOutDate: lodging.checkOutDate || '',
+    checkOutTime: lodging.checkOutTime || '',
+    notes: lodging.notes || ''
+  },
+  itinerary,
+  packing,
+  buddies: Array.isArray(buddies) ? buddies : [],
+  updatedAt: serverTimestamp()
+})
 
       console.log('Auto-saved')
     } catch (err) {
